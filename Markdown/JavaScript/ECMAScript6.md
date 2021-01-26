@@ -275,11 +275,463 @@ includes(str, pos)	是否包含参数字符串<br>
 
 ### 4.数组拓展
 
-#### isNaN
+ES6中为数字拓展了几个方法： isNaN, isFinite, isInteger<br>
 
-ES6中为数字拓展了几个方法：isNaN, isFinite, isInteger<br>
+全局中有一个isNaN方法，是用于判断是否是NaN（not a Number）<br>
 
-全局中有一个isNaN方法
+&emsp;&emsp;全局中的isNaN在判断的时候，<font color=red>会进行类型转换</font><br>
+
+&emsp;&emsp;而Number拓展的isNaN, 在判断的时候不会做类型转换。首先必须是数字，其次才去判断是否是NaN，如果是NaN，返回true，如果不是NaN，返回false<br>
+
+```javascript
+var num1 = 0/1;		//0
+var num2 = 0/-1;	//-0
+var num3 = 1/0;		//Infinity
+var num4 = -1/0;	//-Infinity
+var num5 = 0/0;		//NaN
+
+console.log(isNaN(num4));		//false
+console.log(isNaN(num5));		//true
+console.log(isNaN(100.00));		//false
+console.log(isNaN('100.00'));	//false
+console.log(isNaN(+'100abc'));	//true
+console.log(isNaN(parseInt('100abc')));		//false
+console.log(isNaN(Math.floor('100abc')));		//true
+console.log(isNaN(1/3));		//false
+console.log(isNaN(Math.PI));	//false
+
+
+console.log(Number.isNaN(num4));		//false
+console.log(Number.isNaN(num5));		//true
+console.log(Number.isNaN(100.00));		//false
+console.log(Number.isNaN('100.00'));	//false
+console.log(Number.isNaN('100abc'));	//false
+console.log(Number.isNaN(+'100abc'));	//true
+console.log(Number.isNaN(parseInt('100abc')));		//false
+console.log(Number.isNaN(Math.floor('100abc')));	//true
+console.log(Number.isNaN(1/3));		//false
+console.log(Number.isNaN(Math.PI));	//false
+```
+
+<font color=red>0与-0是有区别的</font>
+
+#### isFinite
+
+全局中有一个isFinite方法，用于判断是否有限的<br>
+
+&emsp;&emsp;全局中isFinite在判断的时候，会进行类型转换。<br>
+
+&emsp;&emsp;而Number拓展的isFinite，在判断的时候不会做类型转换。首先必须是数字，其次才去判断是否是有限的，如果有限的返回true，如果不是有限的，则返回false。<br>
+
+#### from
+
+from方法是用于遍历类数组对象，或将类数组对象转换成数组，是数组的静态方法。<br>
+
+&emsp;&emsp;<font color=red>类数组对象：可以通过索引值获取属性值，并且要具备length属性的一类对象。</font><br>
+
+<font color=red>类数组对象不能使用数组的迭代器方法，ES6中拓展的from方法可以将类数组对象转为真正的数组，之后就可以使用数组的常用方法。</font><br>
+
+可以使用数组的常用方法<br>
+
+&emsp;&emsp;使用方式：  Array.from(arrLike, fn)<br>
+
+&emsp;&emsp;&emsp;&emsp;arrLike：类数组对象<br>
+
+&emsp;&emsp;&emsp;&emsp;fn: 执行的函数，有两个参数：成员值，索引值。作用域是全局作用域。<br>
+
+&emsp;&emsp;&emsp;&emsp;如果传递的fn参数，此时，fn方法的返回值是函数的执行结果。<br>
+
+总结：<font color=red>from方法不仅可以将类数组转为数组，还可以遍历类数组对象。</font><br>
+
+```html
+<div>1-1-1</div>
+<div>2-1-1</div>
+<div>3-1-1</div>
+<div>4-1-1</div>
+<div>5-1-1</div>
+<script>
+//获取div
+    let div = document.getElementsByTagName('div');
+    let arr = Array.from(div, function(item, index){
+        //返回值影响from方法的运行结果
+        return index;
+    })
+    console.log(arr);//输出：[0,1,2,3,4]
+</script>
+```
+
+实现:
+
+```javascript
+//实现from
+Array.icktFrom = function(arrLike, fn){
+    //定义返回的数组
+    var result = [];
+    //遍历类数组对象
+    for(var i=0;i<arrLike.length;i++){
+        if(fn){
+            //将参数传递给fn,存储fn的返回值
+            result.push(fn(arrLike[i],i))
+        }else{
+            //没有fn，直接存储成员
+            result.push(arrLike[i])
+        }
+    }
+    return result;
+}
+```
+
+<font color=red>使用</font>
+
+```javascript
+//div变量，Array.icktFrom见上面两端代码
+var arr = Array.icktFrom(div, function(item, index){
+    item.innerHTML = 'ickt'+index;
+    return item;
+})
+```
+
+#### of
+
+of方法用于创建数组的，是数组的一个静态方法。<br>
+
+&emsp;&emsp;之前通过new Array()或者Array()创建数组有一些问题：<br>
+
+&emsp;&emsp;&emsp;&emsp;1.如果没有传递参数，得到的是一个空数组。<br>
+
+&emsp;&emsp;&emsp;&emsp;2.如果传递了一个数字参数，得到的是带有一个长度的空数组。<br>
+
+&emsp;&emsp;&emsp;&emsp;3.如果传递了一个非数字参数，得到的是带有一个成员的数组。<br>
+
+&emsp;&emsp;&emsp;&emsp;4.如果传递了多个非数字参数，得到的就是一个带有多个参数的数组。<br>
+
+<font color=red>ES6中拓展了of方法可以实现将所有传递的参数都作为数组中的成员存在。</font><br>
+
+创建数组的四种方式：<br>
+
+&emsp;&emsp;字面量[],	构造函数new Array(),	工厂方法：Array(),	Array.of()<br>
+
+实现方法：
+
+```javascript
+//实现方法
+Array.icktOf = function(){
+    //slice方法可以转换数组
+    return Array.prototype.slice.call(arguments);
+}
+```
+
+#### 查找数组
+
+在ES5中拓展了查找成员的方法：indexOf, lastIndexOf<br>
+
+在ES6中拓展了查找成员的方式：find, findIndex<br>
+
+&emsp;&emsp;参数就是执行的函数<br>
+
+&emsp;&emsp;&emsp;&emsp;函数中有三个参数：成员值，索引值，原数组。<br>
+
+&emsp;&emsp;&emsp;&emsp;this默认指向window<br>
+
+find方法在查找成员的时候，如果找到了则<font color=red>返回成员</font>，如果没有找到则返回undefined.<br>
+
+findIndex方法在查找成员的时候，如果找到了则<font color=red>返回该成员的索引</font>，如果没有找到返回-1<br>
+
+<font color=red>在查找的过程中，一旦找到则停止遍历</font>
+
+&emsp;
+
+```javascript
+var arr = [1,3,4,6,8,9];
+//查找成员
+var result = arr.find(function(item, index, arr){
+    return item%2 === 0;
+});
+//查找索引值
+var result = arr.findIndex(function(item, index, arr){
+    return item%2 === 0;
+});
+
+```
+
+#### 数组内部复制
+
+ES6为了实现数组内部成员提供了一个方法：copyWithin<br>
+
+使用方式：<br>
+
+&emsp;&emsp;arr.copyWithin(pos, start, end)<br>
+
+&emsp;&emsp;&emsp;&emsp;pos:	要粘贴的位置。<br>
+
+&emsp;&emsp;&emsp;&emsp;start:	要复制的起始位置（包含起始位置）<br>
+
+&emsp;&emsp;&emsp;&emsp;end:	要复制的结束位置（不包含结束位置）<br>
+
+&emsp;&emsp;&emsp;&emsp;<font color=red>返回值就是原数组，并且原数组发生变化。</font><br>
+
+例如：[0, 1,2,3,4,5,6,7,8,9].copyWithin(3,6,9)
+
+结果：[0,1,2,6,7,8,6,7,8,9]
+
+实现：
+
+```javascript
+//实现copyWithin
+Array.prototype.icktCopyWithin = function(pos, start, end){
+    //截取
+    var arr = this.slice(start, end);
+    ////粘贴
+    //for(var i = 0;i<arr.length;i++){
+    //    //更新成员
+    //    this[i+pos] = arr[i];
+    //}    
+    this.splice.apply(this,[pos, end-start].concat(arr))
+    //返回原数组
+    return this;
+} 
+
+```
+
+#### 迭代器方法
+
+ES6中为了遍历数组中成员，拓展了三个迭代器方法：keys，values，entries<br>
+
+&emsp;&emsp;keys:	获取索引值<br>
+
+&emsp;&emsp;values:获取成员值<br>
+
+&emsp;&emsp;entries:获取索引值以及成员值：[index, item]<br>
+
+<font color=red>由于实现了数组的迭代器接口方法，就可以使用for of或者是next方法遍历</font><br>
+
+&emsp;&emsp;实现了迭代器接口的数据，都有next方法，可以通过next方法来遍历成员。<br>
+
+&emsp;&emsp;返回值是一个对象<br>
+
+&emsp;&emsp;&emsp;&emsp;value:表示成员值		done:表示是否遍历完成<br>
+
+&emsp;&emsp;如果遍历完成了，此时：done将永远是true		value将永远是undefined
+
+```javascript
+var arr = ['a','b','c','d']
+
+//成员值
+var result = arr.values();
+console.log(result);//Array Iterator{}
+console.log(result.next());//{value:"a",done:false}
+console.log(result.next());//{value:"b",done:false}
+console.log(result.next());//{value:"c",done:false}
+console.log(result.next());//{value:"d",done:true}
+console.log(result.next());//{value: undefined,done:true}
+
+```
+
+
+
+
+
+### 5.数学对象拓展
+
+就是对Math对象的拓展，<br>
+
+ES6为了适应大型项目，解决自身运算的问题，拓展了大量的方法。<br>
+
+&emsp;&emsp;Math.cbrt:计算一个数的立方根。<br>
+
+&emsp;&emsp;Math.fround:返回一个数的单精度浮点数型式。<br>
+
+&emsp;&emsp;Math.hypot:返回所有参数的平方和的平方根。<br>
+
+&emsp;&emsp;Math.expm1(x):返回ex-1。<br>
+
+&emsp;&emsp;Math.log1p(x):返回1+x的自然数对数。如果x小于-1，返回NaN。<br>
+
+&emsp;&emsp;Math.log10(x):返回以10为底的x的对数。如果x小于0，则返回NaN。<br>
+
+&emsp;&emsp;Math.log2(x):返回以2为底的x的对数<br>
+
+三角函数方法<br>
+
+&emsp;&emsp;Math.sinh(x)返回x的双曲正弦，Math.cosh(x)返回x的双曲余弦，Math.tanh(x)返回x的双曲正切，Math.asinh(x)返回x的反双曲正弦，Math.acosh(x)返回x的反双曲余弦，Math.atanh(x)返回x的反双曲正切<br>Math.sign返回一个数字的标志，用来判断数字范围的:
+
+(0, Infinity] => 1, 	[-Infinity, 0)=>-1, 	0=>0,	-0=>-0,	 NaN=>NaN<br>
+
+### 6.对象拓展
+
+#### 对象字面量
+
+对象字面量： let obj={}<br>
+
+省略语法：<br>
+
+&emsp;&emsp;1.如果定义的属性名称与属性变量同名，我们可以省略属性名称以及冒号。<br>
+
+&emsp;&emsp;2.可以对属性名称书写表达式，通过[]来动态的设置属性名称。<br>
+
+&emsp;&emsp;3.在对象中定义的方法可以省略冒号以及function关键字。<br>
+
+```javascript
+//变量
+let color = 'red';
+//对象
+let obj = {
+    //color:color,
+    //1.如果定义的属性名称与属性变量同名，我们可以省略属性名称以及冒号
+    color,
+    //2.可以对属性名称书写表达式，通过[]来动态的设置属性名称
+    [color.toUpperCase()+'_hello']:200,
+    //3.在对象中定义的方法可以省略冒号以及function关键字
+    getColor(){
+        return this.color;
+    }
+}
+console.log(obj);
+//输出:
+//{color: "red", RED_hello: 200, getColor: ƒ}
+//RED_hello: 200
+//color: "red"
+//getColor: ƒ getColor()
+//__proto__: Object
+```
+
+#### Object.is
+
+Object.is方法用于判断两个参数是否全等（===）<br>
+
+全等判断(===)有几个问题：<br>
+
+&emsp;&emsp;1.	0与 - 0在之前进行全等判断的时候，得到的是true<br>
+
+&emsp;&emsp;&emsp;&emsp;0与-0之间是差了一个符号位，在二进制中，存储的数据是不同的（0：00000000，-0:10000000）。<br>
+
+&emsp;&emsp;2.	NaN与NaN在进行全等判断的时候，得到的是false，所有的NaN表示“不是一个数字”，它们存储的地址是一样<br>
+
+处了上面的两个问题外，Object.is与全等（===）是完全一致的。
+
+对象拓展的is方法：
+
+&emsp;&emsp;在判断0和-0的时候，得到的是false<br>
+
+&emsp;&emsp;在判断NaN的时候，得到的是true<br>
+
+#### assign
+
+ES6拓展的assign是用于复制对象的，和jQuery，undescore中的extend方法类似。<br>
+
+&emsp;&emsp;使用方式：Object.assign(obj, obj1, obj2)<br>
+
+&emsp;&emsp;&emsp;&emsp;obj: 被复制的目标对象		从第二个参数开始，都是复制的对象		返回值是目标对象obj<br>
+
+&emsp;&emsp;<font color=red>注意：后面对象中的同名属性会覆盖前面对象中的属性。</font>
+
+assign方法实现的是一个浅复制：<br>
+
+&emsp;&emsp;<font color=red>浅复制： 值类型是直接复制，而引用类型是复制引用变量存储的地址（指向同一个对象），没有真正的复制</font><br>
+
+&emsp;&emsp;<font color=red>深复制：值类型是直接复制，引用类型也是直接复制，并不是指向同一对象（函数除外），对象嵌套对象时会递归的深复制下去。</font><br>
+
+
+
+<font color=red>实现浅复制assign</font>
+
+```javascript
+//实现assign(浅复制)
+Object.icktAssign = function(target){
+    //遍历后面的参数对象
+    for(var i =1; i< arguments.length; i++){
+        //获取当前参数对象
+        var obj = arguments[i];
+        //将obj中的属性复制给target
+        for(var key in obj){
+            //复制
+            target[key] = obj[key];
+        }
+    }
+    //返回目标对象
+    return target;
+}
+```
+
+jQuery中的extend方法第一个参数传递true的时候就是深复制(内部会递归调用)。<br>
+
+<font color=red>简单实现深复制：JSON.parse(JSON.stringify)，但是转换json字符串的时候，会过滤掉函数，这种方法的深复制适用于深复制没有函数的对象</font><br>
+
+```javascript
+var obj3 = {
+    color:'red',
+    num: 1,
+    object1:{
+        a:0,
+        b:3
+    }
+    getColor: function(){
+        return this.color;
+    }
+}
+
+//深复制，会过滤掉函数
+var obj = JSON.parse(JSON.stringify(obj3));//obj3中除了getColor没有被复制给obj外，其他的都深复制给了obj，这种方法的深复制适用于深复制没有函数的对象
+```
+
+### 7.for of循环
+
+for of循环是ES6专门为实现了迭代器接口的对象设计的循环结构。<br>
+
+&emsp;&emsp;<font color=red>for of是专门为迭代器接口设置的遍历方法。语法：for(let item of data){}</font><br>
+
+&emsp;&emsp;<font color=red>可以像其他循环一样在内部使用continue,break等关键字。</font><br>
+
+&emsp;&emsp;<font color=red>for of也是可以遍历数组的，但是在遍历过程中，无法使用索引值</font><br>
+
+&emsp;&emsp;&emsp;&emsp;遍历数组的时候，item表示数组的每一个成员，没有办法访问索引值，但是我们可以在外部定义一个循环变量，在循环体中手动更新，for of循环遍历数组的时候，不需要通过索引值访问成员，而for循环以及for in循环要通过索引值访问。<br>
+
+&emsp;&emsp;<font color=red>for in也可以遍历数组，但是有一些问题：遍历的时候，key显示的是字符串，不是数字</font>
+
+总结：**<font color=red>for循环用于遍历数组，for in循环用于遍历对象， for of循环遍历实现了迭代器接口的对象（包括数组）</font>**
+
+```javascript
+var arr = ['a','b','c','d']
+
+//成员值
+var result = arr.values();
+console.log(result);//Array Iterator{}
+//循环
+for(var item of result){
+    console.log(item);
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+## 新语法
+
+### 解构
+
+所谓解构就是解构聚合数据的结构<br>
+
+&emsp;&emsp;在ES5中的聚合数据有：对象，数组<br>
+
+&emsp;&emsp;在之前，对象中获取数据的方式只能通过点语法或者中括号语法<br>
+
+&emsp;&emsp;在之前，数组中获取数据的方法只能通过中括号语法<br>
+
+在ES6中简化了获取数据的方式，提供了解构语法：对象结构与数组解构。<br>
+
+
+
+
+
+
 
 
 
